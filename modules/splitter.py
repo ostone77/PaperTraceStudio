@@ -30,4 +30,4 @@ def save_parts(img, parts):
 
         count += 1
 
-    print("저장된 부품 :", count - 1)
+    return count - 1

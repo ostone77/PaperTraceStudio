@@ -1,7 +1,16 @@
 import cv2
 
+from config import (
+    MIN_PART_WIDTH,
+    MIN_PART_HEIGHT,
+    MIN_PART_AREA
+)
+
 
 def find_parts(mask):
+    """
+    부품 영역 검출
+    """
 
     contours, _ = cv2.findContours(
         mask,
@@ -15,21 +24,15 @@ def find_parts(mask):
 
         area = cv2.contourArea(contour)
 
-        # 너무 작은 객체 제거
-        if area < 800:
+        if area < MIN_PART_AREA:
             continue
 
         x, y, w, h = cv2.boundingRect(contour)
 
-        # 숫자 제거
-        if w < 40:
+        if w < MIN_PART_WIDTH:
             continue
 
-        if h < 40:
-            continue
-
-        # 번호 제거
-        if w * h < 2500:
+        if h < MIN_PART_HEIGHT:
             continue
 
         parts.append({
@@ -37,15 +40,9 @@ def find_parts(mask):
             "y": y,
             "w": w,
             "h": h,
-            "area": area,
-            "contour": contour
+            "area": area
         })
 
-    # 큰 부품부터 정렬
-    parts = sorted(
-        parts,
-        key=lambda p: p["area"],
-        reverse=True
-    )
+    parts = sorted(parts, key=lambda p: (p["y"], p["x"]))
 
     return parts
