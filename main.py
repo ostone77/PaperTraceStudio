@@ -4,6 +4,7 @@ from modules.detector import find_parts
 from modules.splitter import save_parts
 from modules.cut_detector import extract_cut
 from modules.fold_detector import extract_fold
+from modules.vectorizer import vectorize, draw_points
 
 from config import PART_MARGIN
 
@@ -14,6 +15,10 @@ import os
 print("===================================")
 print("Paper Trace Studio Build006.1")
 print("===================================")
+
+import os
+
+print("현재 작업 폴더 :", os.getcwd())
 
 IMAGE_PATH = "sample/test.gif"
 
@@ -60,6 +65,9 @@ print(f"저장된 부품 : {saved}")
 os.makedirs("output", exist_ok=True)
 os.makedirs("output/cut", exist_ok=True)
 os.makedirs("output/fold", exist_ok=True)
+os.makedirs("output/vector_preview", exist_ok=True)
+
+print("vector_preview 존재 :", os.path.exists("output/vector_preview"))
 
 # --------------------------------------------------
 # Cut / Fold 저장
@@ -86,6 +94,17 @@ for i, part in enumerate(parts):
     cv2.imwrite(
         f"output/cut/part{i+1:03d}.png",
         cut
+    )
+
+    points = vectorize(cut)
+
+    print(f"part{i+1:03d} : {len(points)} points")
+
+    preview = draw_points(cut, points)
+
+    cv2.imwrite(
+        f"output/vector_preview/part{i+1:03d}.png",
+        preview
     )
 
     # Fold

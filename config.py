@@ -58,3 +58,9 @@ SAVE_CUT = True
 SAVE_FOLD = True
 
 SAVE_VECTOR = True
+
+# ----------------------------------------
+# Vector
+# ----------------------------------------
+
+VECTOR_EPSILON = 1.5
