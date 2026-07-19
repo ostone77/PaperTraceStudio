@@ -5,6 +5,8 @@ from modules.splitter import save_parts
 from modules.cut_detector import extract_cut
 from modules.fold_detector import extract_fold
 from modules.vectorizer import vectorize, draw_points
+from modules.dxf_export import save_dxf
+from modules.polyline import simplify
 
 from config import PART_MARGIN
 
@@ -13,7 +15,7 @@ import os
 
 
 print("===================================")
-print("Paper Trace Studio Build006.1")
+print("Paper Trace Studio Build007")
 print("===================================")
 
 import os
@@ -66,6 +68,7 @@ os.makedirs("output", exist_ok=True)
 os.makedirs("output/cut", exist_ok=True)
 os.makedirs("output/fold", exist_ok=True)
 os.makedirs("output/vector_preview", exist_ok=True)
+os.makedirs("output/dxf", exist_ok=True)
 
 print("vector_preview 존재 :", os.path.exists("output/vector_preview"))
 
@@ -96,9 +99,14 @@ for i, part in enumerate(parts):
         cut
     )
 
+    # 먼저 외곽선 좌표 추출
     points = vectorize(cut)
+    points = simplify(points)
 
-    print(f"part{i+1:03d} : {len(points)} points")
+
+    print(
+       f"part{i+1:03d} : {len(points)} points"
+    )
 
     preview = draw_points(cut, points)
 
@@ -107,6 +115,21 @@ for i, part in enumerate(parts):
         preview
     )
 
+    if points:
+
+       min_x = min(x for x, y in points)
+       min_y = min(y for x, y in points)
+
+       normalized = [
+           (x - min_x, y - min_y)
+           for x, y in points
+        ]
+
+       save_dxf(
+           normalized,
+           f"output/dxf/part{i+1:03d}.dxf"
+        )
+
     # Fold
     fold = extract_fold(crop, cut)
 
@@ -114,6 +137,7 @@ for i, part in enumerate(parts):
         f"output/fold/part{i+1:03d}.png",
         fold
     )
+
 
 # --------------------------------------------------
 # Debug 저장
