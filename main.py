@@ -7,6 +7,9 @@ from modules.fold_detector import extract_fold
 from modules.vectorizer import vectorize, draw_points
 from modules.dxf_export import save_dxf
 from modules.polyline import simplify
+from modules.line_classifier import classify_lines
+from modules.width_detector import detect_width
+from modules.fold_candidate import extract_fold_candidate
 
 from config import PART_MARGIN
 
@@ -44,6 +47,13 @@ img = load_gif(IMAGE_PATH)
 mask = extract_black(img)
 mask = clean_mask(mask)
 
+width_map = classify_lines(mask)
+
+cv2.imwrite(
+    "output/line_width/width_map.png",
+    width_map
+)
+
 # --------------------------------------------------
 # 부품 검출
 # --------------------------------------------------
@@ -67,8 +77,12 @@ print(f"저장된 부품 : {saved}")
 os.makedirs("output", exist_ok=True)
 os.makedirs("output/cut", exist_ok=True)
 os.makedirs("output/fold", exist_ok=True)
+os.makedirs("output/fold_candidate", exist_ok=True)
 os.makedirs("output/vector_preview", exist_ok=True)
 os.makedirs("output/dxf", exist_ok=True)
+os.makedirs("output/line_width", exist_ok=True)
+os.makedirs("output/width_map", exist_ok=True)
+
 
 print("vector_preview 존재 :", os.path.exists("output/vector_preview"))
 
@@ -97,6 +111,21 @@ for i, part in enumerate(parts):
     cv2.imwrite(
         f"output/cut/part{i+1:03d}.png",
         cut
+    )
+
+    width_map = detect_width(cut)
+
+    cv2.imwrite(
+        f"output/width_map/part{i+1:03d}.png",
+        width_map
+    )
+
+    # 선 굵기 분석
+    width_map = classify_lines(cut)
+
+    cv2.imwrite(
+        f"output/width_map/part{i+1:03d}.png",
+        width_map
     )
 
     # 먼저 외곽선 좌표 추출
@@ -130,13 +159,18 @@ for i, part in enumerate(parts):
            f"output/dxf/part{i+1:03d}.dxf"
         )
 
-    # Fold
-    fold = extract_fold(crop, cut)
+    # Fold_candidate
+    
+    candidate = extract_fold_candidate(
+        crop,
+        cut
+    )
 
     cv2.imwrite(
-        f"output/fold/part{i+1:03d}.png",
-        fold
+        f"output/fold_candidate/part{i+1:03d}.png",
+        candidate
     )
+
 
 
 # --------------------------------------------------
