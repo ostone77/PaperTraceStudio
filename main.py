@@ -10,6 +10,8 @@ from modules.polyline import simplify
 from modules.line_classifier import classify_lines
 from modules.width_detector import detect_width
 from modules.fold_candidate import extract_fold_candidate
+from modules.fold_filter import filter_fold
+from modules.pen_layer import extract_pen
 
 from config import PART_MARGIN
 
@@ -77,11 +79,17 @@ print(f"저장된 부품 : {saved}")
 os.makedirs("output", exist_ok=True)
 os.makedirs("output/cut", exist_ok=True)
 os.makedirs("output/fold", exist_ok=True)
+os.makedirs("output/pen", exist_ok=True)
 os.makedirs("output/fold_candidate", exist_ok=True)
 os.makedirs("output/vector_preview", exist_ok=True)
 os.makedirs("output/dxf", exist_ok=True)
 os.makedirs("output/line_width", exist_ok=True)
 os.makedirs("output/width_map", exist_ok=True)
+os.makedirs("output/fold_clean", exist_ok=True)
+os.makedirs(
+    "output/fold_vector",
+    exist_ok=True
+)
 
 
 print("vector_preview 존재 :", os.path.exists("output/vector_preview"))
@@ -104,6 +112,14 @@ for i, part in enumerate(parts):
     y2 = min(img.shape[0], y + h + PART_MARGIN)
 
     crop = img[y1:y2, x1:x2]
+
+    # Pen
+    pen = extract_pen(crop)
+
+    cv2.imwrite(
+        f"output/pen/part{i+1:03d}.png",
+        pen
+    )
 
     # Cut
     cut = extract_cut(crop)
@@ -169,6 +185,13 @@ for i, part in enumerate(parts):
     cv2.imwrite(
         f"output/fold_candidate/part{i+1:03d}.png",
         candidate
+    )
+
+    clean = filter_fold(candidate)
+
+    cv2.imwrite(
+        f"output/fold_clean/part{i+1:03d}.png",
+        clean
     )
 
 
