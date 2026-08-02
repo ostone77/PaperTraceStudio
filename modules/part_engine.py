@@ -5,11 +5,15 @@ from config import PART_MARGIN
 
 from modules.pen_layer import extract_pen
 from modules.cut_detector import extract_cut
-from modules.vectorizer import vectorize, draw_points
 from modules.polyline import simplify
-from modules.dxf_export import save_dxf
 from modules.fold_candidate import extract_fold_candidate
 from modules.fold_filter import filter_fold
+
+from modules.vectorizer import vectorize
+from modules.export_engine import (
+    save_preview,
+    save_dxf_file,
+)
 
 
 def process_part(
@@ -75,43 +79,31 @@ def process_part(
     # Vector Preview
     # ------------------------------------------
 
-    preview = draw_points(
-        cut,
-        points
-    )
+    save_preview(
 
-    cv2.imwrite(
-        os.path.join(
-            project.vector,
-            f"part{index+1:03d}.png"
-        ),
-        preview
+        points,
+
+        cut,
+
+        project.vector,
+
+        f"part{index+1:03d}.png"
+
     )
 
     # ------------------------------------------
     # DXF Export
     # ------------------------------------------
 
-    if points:
+    save_dxf_file(
 
-        min_x = min(x for x, y in points)
-        min_y = min(y for x, y in points)
+        points,
 
-        normalized = [
-            (
-                x - min_x,
-                y - min_y
-            )
-            for x, y in points
-        ]
+        project.dxf,
 
-        save_dxf(
-            normalized,
-            os.path.join(
-                project.dxf,
-                f"part{index+1:03d}.dxf"
-            )
-        )
+        f"part{index+1:03d}.dxf"
+
+    )
 
     # ------------------------------------------
     # Fold Candidate
