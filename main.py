@@ -1,17 +1,20 @@
 from modules.loader import load_gif
+from modules.pdf_loader import load_pdf
+
 from modules.preprocess import extract_black, clean_mask
 from modules.detector import find_parts
 from modules.splitter import save_parts
+
+from modules.pen_layer import extract_pen
 from modules.cut_detector import extract_cut
-from modules.fold_detector import extract_fold
+
 from modules.vectorizer import vectorize, draw_points
-from modules.dxf_export import save_dxf
 from modules.polyline import simplify
+from modules.dxf_export import save_dxf
+
 from modules.line_classifier import classify_lines
-from modules.width_detector import detect_width
 from modules.fold_candidate import extract_fold_candidate
 from modules.fold_filter import filter_fold
-from modules.pen_layer import extract_pen
 
 from config import PART_MARGIN
 
@@ -20,82 +23,143 @@ import os
 
 
 print("===================================")
-print("Paper Trace Studio Build007")
+print("Paper Trace Studio Build011 Final")
 print("===================================")
 
-import os
+
+# --------------------------------------------------
+# Input
+# --------------------------------------------------
+
+def find_input_file():
+
+    input_dir = "input"
+
+    if not os.path.exists(input_dir):
+        return None
+
+    exts = [".pdf", ".gif"]
+
+    for file in sorted(os.listdir(input_dir)):
+
+        ext = os.path.splitext(file)[1].lower()
+
+        if ext in exts:
+            return os.path.join(input_dir, file)
+
+    return None
+
 
 print("현재 작업 폴더 :", os.getcwd())
 
-IMAGE_PATH = "sample/test.gif"
+IMAGE_PATH = find_input_file()
 
-if not os.path.exists(IMAGE_PATH):
-    print("파일이 없습니다.")
+if IMAGE_PATH is None:
+
+    print("input 폴더에 PDF 또는 GIF가 없습니다.")
     input()
     quit()
 
-print("GIF 읽는 중...")
+
+PROJECT_NAME = os.path.splitext(
+    os.path.basename(IMAGE_PATH)
+)[0]
+
+
+OUTPUT_DIR = os.path.join(
+    "output",
+    PROJECT_NAME
+)
+
+
+print(f"입력 파일 : {IMAGE_PATH}")
+
+
+ext = os.path.splitext(
+    IMAGE_PATH
+)[1].lower()
+
+
+if ext == ".gif":
+
+    print("GIF 읽는 중...")
+    img = load_gif(IMAGE_PATH)
+
+elif ext == ".pdf":
+
+    print("PDF 읽는 중...")
+    img = load_pdf(IMAGE_PATH)
+
+else:
+
+    raise Exception("지원하지 않는 파일 형식입니다.")
+
 
 # --------------------------------------------------
-# GIF 로드
+# Output Folder
 # --------------------------------------------------
 
-img = load_gif(IMAGE_PATH)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+PEN_DIR = os.path.join(OUTPUT_DIR, "pen")
+CUT_DIR = os.path.join(OUTPUT_DIR, "cut")
+VECTOR_DIR = os.path.join(OUTPUT_DIR, "vector_preview")
+DXF_DIR = os.path.join(OUTPUT_DIR, "dxf")
+FOLD_CANDIDATE_DIR = os.path.join(OUTPUT_DIR, "fold_candidate")
+FOLD_CLEAN_DIR = os.path.join(OUTPUT_DIR, "fold_clean")
+WIDTH_DIR = os.path.join(OUTPUT_DIR, "width_map")
+
+os.makedirs(PEN_DIR, exist_ok=True)
+os.makedirs(CUT_DIR, exist_ok=True)
+os.makedirs(VECTOR_DIR, exist_ok=True)
+os.makedirs(DXF_DIR, exist_ok=True)
+os.makedirs(FOLD_CANDIDATE_DIR, exist_ok=True)
+os.makedirs(FOLD_CLEAN_DIR, exist_ok=True)
+os.makedirs(WIDTH_DIR, exist_ok=True)
+
 
 # --------------------------------------------------
-# 검은선 추출
+# Preprocess
 # --------------------------------------------------
 
 mask = extract_black(img)
 mask = clean_mask(mask)
 
-width_map = classify_lines(mask)
+line_class = classify_lines(mask)
 
 cv2.imwrite(
-    "output/line_width/width_map.png",
-    width_map
+    os.path.join(
+        WIDTH_DIR,
+        "line_width.png"
+    ),
+    line_class
 )
 
+
 # --------------------------------------------------
-# 부품 검출
+# Part Detection
 # --------------------------------------------------
 
 parts = find_parts(mask)
 
 print(f"검출된 부품 : {len(parts)}")
 
-# --------------------------------------------------
-# 부품 저장
-# --------------------------------------------------
 
-saved = save_parts(img, parts)
+saved = save_parts(
+    img,
+    parts
+)
 
 print(f"저장된 부품 : {saved}")
 
-# --------------------------------------------------
-# 출력 폴더 생성
-# --------------------------------------------------
-
-os.makedirs("output", exist_ok=True)
-os.makedirs("output/cut", exist_ok=True)
-os.makedirs("output/fold", exist_ok=True)
-os.makedirs("output/pen", exist_ok=True)
-os.makedirs("output/fold_candidate", exist_ok=True)
-os.makedirs("output/vector_preview", exist_ok=True)
-os.makedirs("output/dxf", exist_ok=True)
-os.makedirs("output/line_width", exist_ok=True)
-os.makedirs("output/width_map", exist_ok=True)
-os.makedirs("output/fold_clean", exist_ok=True)
-os.makedirs(
-    "output/fold_vector",
-    exist_ok=True
+print(
+    "vector_preview 존재 :",
+    os.path.exists(VECTOR_DIR)
 )
 
 
-print("vector_preview 존재 :", os.path.exists("output/vector_preview"))
-
 # --------------------------------------------------
-# Cut / Fold 저장
+# Process Parts
 # --------------------------------------------------
 
 for i, part in enumerate(parts):
@@ -105,103 +169,213 @@ for i, part in enumerate(parts):
     w = part["w"]
     h = part["h"]
 
-    x1 = max(0, x - PART_MARGIN)
-    y1 = max(0, y - PART_MARGIN)
+    x1 = max(
+        0,
+        x - PART_MARGIN
+    )
 
-    x2 = min(img.shape[1], x + w + PART_MARGIN)
-    y2 = min(img.shape[0], y + h + PART_MARGIN)
+    y1 = max(
+        0,
+        y - PART_MARGIN
+    )
 
-    crop = img[y1:y2, x1:x2]
+    x2 = min(
+        img.shape[1],
+        x + w + PART_MARGIN
+    )
 
-    # Pen
+    y2 = min(
+        img.shape[0],
+        y + h + PART_MARGIN
+    )
+
+    crop = img[
+        y1:y2,
+        x1:x2
+    ]
+
+
+    # ------------------------------------------
+    # Pen Layer
+    # ------------------------------------------
+
     pen = extract_pen(crop)
 
     cv2.imwrite(
-        f"output/pen/part{i+1:03d}.png",
+        os.path.join(
+            PEN_DIR,
+            f"part{i+1:03d}.png"
+        ),
         pen
     )
 
-    # Cut
+
+    # ------------------------------------------
+    # Cut Layer
+    # ------------------------------------------
+
     cut = extract_cut(crop)
 
     cv2.imwrite(
-        f"output/cut/part{i+1:03d}.png",
+        os.path.join(
+            CUT_DIR,
+            f"part{i+1:03d}.png"
+        ),
         cut
     )
 
-    width_map = detect_width(cut)
+    # ------------------------------------------
+    # Vectorize
+    # ------------------------------------------
 
-    cv2.imwrite(
-        f"output/width_map/part{i+1:03d}.png",
-        width_map
-    )
-
-    # 선 굵기 분석
-    width_map = classify_lines(cut)
-
-    cv2.imwrite(
-        f"output/width_map/part{i+1:03d}.png",
-        width_map
-    )
-
-    # 먼저 외곽선 좌표 추출
     points = vectorize(cut)
     points = simplify(points)
 
-
     print(
-       f"part{i+1:03d} : {len(points)} points"
+        f"part{i+1:03d} : {len(points)} points"
     )
 
-    preview = draw_points(cut, points)
+
+    # ------------------------------------------
+    # Vector Preview
+    # ------------------------------------------
+
+    preview = draw_points(
+        cut,
+        points
+    )
 
     cv2.imwrite(
-        f"output/vector_preview/part{i+1:03d}.png",
+        os.path.join(
+            VECTOR_DIR,
+            f"part{i+1:03d}.png"
+        ),
         preview
     )
 
+
+    # ------------------------------------------
+    # DXF Export
+    # ------------------------------------------
+
     if points:
 
-       min_x = min(x for x, y in points)
-       min_y = min(y for x, y in points)
-
-       normalized = [
-           (x - min_x, y - min_y)
-           for x, y in points
-        ]
-
-       save_dxf(
-           normalized,
-           f"output/dxf/part{i+1:03d}.dxf"
+        min_x = min(
+            x for x, y in points
         )
 
-    # Fold_candidate
-    
+        min_y = min(
+            y for x, y in points
+        )
+
+        normalized = [
+
+            (
+                x - min_x,
+                y - min_y
+
+            )
+
+            for x, y in points
+
+        ]
+
+        save_dxf(
+
+            normalized,
+
+            os.path.join(
+
+                DXF_DIR,
+
+                f"part{i+1:03d}.dxf"
+
+            )
+
+        )
+
+
+    # ------------------------------------------
+    # Fold Candidate
+    # ------------------------------------------
+
     candidate = extract_fold_candidate(
+
         crop,
+
         cut
+
     )
 
     cv2.imwrite(
-        f"output/fold_candidate/part{i+1:03d}.png",
+
+        os.path.join(
+
+            FOLD_CANDIDATE_DIR,
+
+            f"part{i+1:03d}.png"
+
+        ),
+
+        candidate
+
+    )
+
+
+    # ------------------------------------------
+    # Fold Clean
+    # ------------------------------------------
+
+    clean = filter_fold(
         candidate
     )
 
-    clean = filter_fold(candidate)
-
     cv2.imwrite(
-        f"output/fold_clean/part{i+1:03d}.png",
+
+        os.path.join(
+
+            FOLD_CLEAN_DIR,
+
+            f"part{i+1:03d}.png"
+
+        ),
+
         clean
+
     )
 
-
-
 # --------------------------------------------------
-# Debug 저장
+# Debug Save
 # --------------------------------------------------
 
-cv2.imwrite("output/original.png", img)
-cv2.imwrite("output/line_mask.png", mask)
+cv2.imwrite(
+
+    os.path.join(
+
+        OUTPUT_DIR,
+
+        "original.png"
+
+    ),
+
+    img
+
+)
+
+cv2.imwrite(
+
+    os.path.join(
+
+        OUTPUT_DIR,
+
+        "line_mask.png"
+
+    ),
+
+    mask
+
+)
+
 
 # --------------------------------------------------
 # Preview
@@ -212,15 +386,51 @@ preview = img.copy()
 for part in parts:
 
     cv2.rectangle(
+
         preview,
+
         (part["x"], part["y"]),
-        (part["x"] + part["w"], part["y"] + part["h"]),
+
+        (
+
+            part["x"] + part["w"],
+
+            part["y"] + part["h"]
+
+        ),
+
         (0, 255, 0),
+
         2
+
     )
 
-cv2.imshow("Original", preview)
-cv2.imshow("Line Mask", mask)
+
+print()
+print("===================================")
+print("Processing Complete")
+print("===================================")
+print(f"Project : {PROJECT_NAME}")
+print(f"Parts   : {len(parts)}")
+print(f"Output  : {OUTPUT_DIR}")
+print()
+
+
+cv2.imshow(
+
+    "Original",
+
+    preview
+
+)
+
+cv2.imshow(
+
+    "Line Mask",
+
+    mask
+
+)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
