@@ -16,12 +16,7 @@ def process_part(
     index,
     part,
     img,
-    pen_dir,
-    cut_dir,
-    vector_dir,
-    dxf_dir,
-    fold_candidate_dir,
-    fold_clean_dir,
+    project,
 ):
 
     x = part["x"]
@@ -45,7 +40,7 @@ def process_part(
 
     cv2.imwrite(
         os.path.join(
-            pen_dir,
+            project.pen,
             f"part{index+1:03d}.png"
         ),
         pen
@@ -59,7 +54,7 @@ def process_part(
 
     cv2.imwrite(
         os.path.join(
-            cut_dir,
+            project.cut,
             f"part{index+1:03d}.png"
         ),
         cut
@@ -87,7 +82,7 @@ def process_part(
 
     cv2.imwrite(
         os.path.join(
-            vector_dir,
+            project.vector,
             f"part{index+1:03d}.png"
         ),
         preview
@@ -113,7 +108,7 @@ def process_part(
         save_dxf(
             normalized,
             os.path.join(
-                dxf_dir,
+                project.dxf,
                 f"part{index+1:03d}.dxf"
             )
         )
@@ -129,7 +124,7 @@ def process_part(
 
     cv2.imwrite(
         os.path.join(
-            fold_candidate_dir,
+            project.fold_candidate,
             f"part{index+1:03d}.png"
         ),
         candidate
@@ -145,7 +140,7 @@ def process_part(
 
     cv2.imwrite(
         os.path.join(
-            fold_clean_dir,
+            project.fold_clean,
             f"part{index+1:03d}.png"
         ),
         clean

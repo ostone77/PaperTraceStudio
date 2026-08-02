@@ -2,10 +2,10 @@ from modules.loader import load_gif
 from modules.pdf_loader import load_pdf
 
 from modules.part_engine import process_part
+from modules.project import Project
 
 from modules.preprocess import extract_black, clean_mask
 from modules.detector import find_parts
-from modules.splitter import save_parts
 
 from modules.pen_layer import extract_pen
 from modules.cut_detector import extract_cut
@@ -24,7 +24,7 @@ import os
 
 
 print("======================================================")
-print("Paper Trace Studio Build012A - Extract part processing")
+print("Paper Trace Studio Build012B - ")
 print("======================================================")
 
 
@@ -116,6 +116,25 @@ os.makedirs(DXF_DIR, exist_ok=True)
 os.makedirs(FOLD_CANDIDATE_DIR, exist_ok=True)
 os.makedirs(FOLD_CLEAN_DIR, exist_ok=True)
 
+# --------------------------------------------------
+# Project
+# --------------------------------------------------
+
+project = Project()
+
+project.name = PROJECT_NAME
+project.input_file = IMAGE_PATH
+
+project.output = OUTPUT_DIR
+
+project.pen = PEN_DIR
+project.cut = CUT_DIR
+project.vector = VECTOR_DIR
+project.dxf = DXF_DIR
+
+project.fold_candidate = FOLD_CANDIDATE_DIR
+project.fold_clean = FOLD_CLEAN_DIR
+
 
 # --------------------------------------------------
 # Preprocess
@@ -130,16 +149,17 @@ mask = clean_mask(mask)
 # --------------------------------------------------
 
 parts = find_parts(mask)
+project.parts = parts
 
 print(f"검출된 부품 : {len(parts)}")
 
 
-saved = save_parts(
-    img,
-    parts
-)
-
-print(f"저장된 부품 : {saved}")
+# saved = save_parts(
+#     img,
+#     parts
+# ) 
+#
+# print(f"저장된 부품 : {saved}")
 
 print(
     "vector_preview 존재 :",
@@ -163,25 +183,10 @@ output_dirs = {
 for i, part in enumerate(parts):
 
     process_part(
-
         i,
-
         part,
-
         img,
-
-        PEN_DIR,
-
-        CUT_DIR,
-
-        VECTOR_DIR,
-
-        DXF_DIR,
-
-        FOLD_CANDIDATE_DIR,
-
-        FOLD_CLEAN_DIR
-
+        project
     )
 
 # --------------------------------------------------
