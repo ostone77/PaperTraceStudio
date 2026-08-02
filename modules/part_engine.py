@@ -13,6 +13,7 @@ from modules.vectorizer import vectorize
 from modules.export_engine import (
     save_preview,
     save_dxf_file,
+    save_svg_file,
 )
 
 
@@ -102,6 +103,20 @@ def process_part(
         project.dxf,
 
         f"part{index+1:03d}.dxf"
+
+    )
+
+    # ------------------------------------------
+    # SVG Export
+    # ------------------------------------------
+
+    save_svg_file(
+
+        points,
+
+        project.svg,
+
+        f"part{index+1:03d}.svg"
 
     )
 

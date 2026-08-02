@@ -18,6 +18,7 @@ class Project:
         self.cut = ""
         self.vector = ""
         self.dxf = ""
+        self.svg = ""
         self.fold_candidate = ""
         self.fold_clean = ""
 

@@ -3,6 +3,7 @@ import cv2
 
 from modules.vectorizer import draw_points
 from modules.dxf_export import save_dxf
+from modules.svg_export import save_svg
 
 
 def save_preview(points, cut, output_dir, filename):
@@ -48,6 +49,25 @@ def save_dxf_file(points, output_dir, filename):
         os.path.join(
             output_dir,
             filename
+        )
+
+    )
+
+def save_svg_file(points, output_dir, filename):
+
+    if not points:
+        return
+
+    save_svg(
+
+        points,
+
+        os.path.join(
+
+            output_dir,
+
+            filename
+
         )
 
     )

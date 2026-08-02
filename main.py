@@ -23,9 +23,9 @@ import cv2
 import os
 
 
-print("===============================================================")
-print("Paper Trace Studio Build012C - Project architecture refactoring")
-print("===============================================================")
+print("========================================")
+print("Paper Trace Studio Build013 - SVG Export")
+print("========================================")
 
 
 # --------------------------------------------------
@@ -106,6 +106,7 @@ PEN_DIR = os.path.join(OUTPUT_DIR, "pen")
 CUT_DIR = os.path.join(OUTPUT_DIR, "cut")
 VECTOR_DIR = os.path.join(OUTPUT_DIR, "vector_preview")
 DXF_DIR = os.path.join(OUTPUT_DIR, "dxf")
+SVG_DIR = os.path.join(OUTPUT_DIR, "svg")
 FOLD_CANDIDATE_DIR = os.path.join(OUTPUT_DIR, "fold_candidate")
 FOLD_CLEAN_DIR = os.path.join(OUTPUT_DIR, "fold_clean")
 
@@ -113,6 +114,7 @@ os.makedirs(PEN_DIR, exist_ok=True)
 os.makedirs(CUT_DIR, exist_ok=True)
 os.makedirs(VECTOR_DIR, exist_ok=True)
 os.makedirs(DXF_DIR, exist_ok=True)
+os.makedirs(SVG_DIR, exist_ok=True)
 os.makedirs(FOLD_CANDIDATE_DIR, exist_ok=True)
 os.makedirs(FOLD_CLEAN_DIR, exist_ok=True)
 
@@ -131,6 +133,7 @@ project.pen = PEN_DIR
 project.cut = CUT_DIR
 project.vector = VECTOR_DIR
 project.dxf = DXF_DIR
+project.svg = SVG_DIR
 
 project.fold_candidate = FOLD_CANDIDATE_DIR
 project.fold_clean = FOLD_CLEAN_DIR
