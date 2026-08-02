@@ -19,6 +19,7 @@ class Project:
         self.vector = ""
         self.dxf = ""
         self.svg = ""
+        self.pen_dxf = ""
         self.fold_candidate = ""
         self.fold_clean = ""
 

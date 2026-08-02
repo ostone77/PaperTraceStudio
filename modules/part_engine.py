@@ -16,6 +16,8 @@ from modules.export_engine import (
     save_svg_file,
 )
 
+from modules.pen_export import save_pen_dxf
+
 
 def process_part(
     index,
@@ -151,4 +153,18 @@ def process_part(
             f"part{index+1:03d}.png"
         ),
         clean
+    )
+
+    # ------------------------------------------
+    # Pen DXF
+    # ------------------------------------------
+
+    save_pen_dxf(
+
+        clean,
+
+        project.pen_dxf,
+
+        f"part{index+1:03d}.dxf"
+
     )
