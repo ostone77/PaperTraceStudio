@@ -1,6 +1,8 @@
 from modules.loader import load_gif
 from modules.pdf_loader import load_pdf
 
+from modules.part_engine import process_part
+
 from modules.preprocess import extract_black, clean_mask
 from modules.detector import find_parts
 from modules.splitter import save_parts
@@ -12,7 +14,6 @@ from modules.vectorizer import vectorize, draw_points
 from modules.polyline import simplify
 from modules.dxf_export import save_dxf
 
-from modules.line_classifier import classify_lines
 from modules.fold_candidate import extract_fold_candidate
 from modules.fold_filter import filter_fold
 
@@ -22,9 +23,9 @@ import cv2
 import os
 
 
-print("===================================")
-print("Paper Trace Studio Build011 Final")
-print("===================================")
+print("======================================================")
+print("Paper Trace Studio Build012A - Extract part processing")
+print("======================================================")
 
 
 # --------------------------------------------------
@@ -107,7 +108,6 @@ VECTOR_DIR = os.path.join(OUTPUT_DIR, "vector_preview")
 DXF_DIR = os.path.join(OUTPUT_DIR, "dxf")
 FOLD_CANDIDATE_DIR = os.path.join(OUTPUT_DIR, "fold_candidate")
 FOLD_CLEAN_DIR = os.path.join(OUTPUT_DIR, "fold_clean")
-WIDTH_DIR = os.path.join(OUTPUT_DIR, "width_map")
 
 os.makedirs(PEN_DIR, exist_ok=True)
 os.makedirs(CUT_DIR, exist_ok=True)
@@ -115,7 +115,6 @@ os.makedirs(VECTOR_DIR, exist_ok=True)
 os.makedirs(DXF_DIR, exist_ok=True)
 os.makedirs(FOLD_CANDIDATE_DIR, exist_ok=True)
 os.makedirs(FOLD_CLEAN_DIR, exist_ok=True)
-os.makedirs(WIDTH_DIR, exist_ok=True)
 
 
 # --------------------------------------------------
@@ -124,16 +123,6 @@ os.makedirs(WIDTH_DIR, exist_ok=True)
 
 mask = extract_black(img)
 mask = clean_mask(mask)
-
-line_class = classify_lines(mask)
-
-cv2.imwrite(
-    os.path.join(
-        WIDTH_DIR,
-        "line_width.png"
-    ),
-    line_class
-)
 
 
 # --------------------------------------------------
@@ -162,185 +151,36 @@ print(
 # Process Parts
 # --------------------------------------------------
 
+output_dirs = {
+    "pen": PEN_DIR,
+    "cut": CUT_DIR,
+    "vector": VECTOR_DIR,
+    "dxf": DXF_DIR,
+    "fold_candidate": FOLD_CANDIDATE_DIR,
+    "fold_clean": FOLD_CLEAN_DIR,
+}
+
 for i, part in enumerate(parts):
 
-    x = part["x"]
-    y = part["y"]
-    w = part["w"]
-    h = part["h"]
+    process_part(
 
-    x1 = max(
-        0,
-        x - PART_MARGIN
-    )
+        i,
 
-    y1 = max(
-        0,
-        y - PART_MARGIN
-    )
+        part,
 
-    x2 = min(
-        img.shape[1],
-        x + w + PART_MARGIN
-    )
+        img,
 
-    y2 = min(
-        img.shape[0],
-        y + h + PART_MARGIN
-    )
+        PEN_DIR,
 
-    crop = img[
-        y1:y2,
-        x1:x2
-    ]
+        CUT_DIR,
 
+        VECTOR_DIR,
 
-    # ------------------------------------------
-    # Pen Layer
-    # ------------------------------------------
+        DXF_DIR,
 
-    pen = extract_pen(crop)
+        FOLD_CANDIDATE_DIR,
 
-    cv2.imwrite(
-        os.path.join(
-            PEN_DIR,
-            f"part{i+1:03d}.png"
-        ),
-        pen
-    )
-
-
-    # ------------------------------------------
-    # Cut Layer
-    # ------------------------------------------
-
-    cut = extract_cut(crop)
-
-    cv2.imwrite(
-        os.path.join(
-            CUT_DIR,
-            f"part{i+1:03d}.png"
-        ),
-        cut
-    )
-
-    # ------------------------------------------
-    # Vectorize
-    # ------------------------------------------
-
-    points = vectorize(cut)
-    points = simplify(points)
-
-    print(
-        f"part{i+1:03d} : {len(points)} points"
-    )
-
-
-    # ------------------------------------------
-    # Vector Preview
-    # ------------------------------------------
-
-    preview = draw_points(
-        cut,
-        points
-    )
-
-    cv2.imwrite(
-        os.path.join(
-            VECTOR_DIR,
-            f"part{i+1:03d}.png"
-        ),
-        preview
-    )
-
-
-    # ------------------------------------------
-    # DXF Export
-    # ------------------------------------------
-
-    if points:
-
-        min_x = min(
-            x for x, y in points
-        )
-
-        min_y = min(
-            y for x, y in points
-        )
-
-        normalized = [
-
-            (
-                x - min_x,
-                y - min_y
-
-            )
-
-            for x, y in points
-
-        ]
-
-        save_dxf(
-
-            normalized,
-
-            os.path.join(
-
-                DXF_DIR,
-
-                f"part{i+1:03d}.dxf"
-
-            )
-
-        )
-
-
-    # ------------------------------------------
-    # Fold Candidate
-    # ------------------------------------------
-
-    candidate = extract_fold_candidate(
-
-        crop,
-
-        cut
-
-    )
-
-    cv2.imwrite(
-
-        os.path.join(
-
-            FOLD_CANDIDATE_DIR,
-
-            f"part{i+1:03d}.png"
-
-        ),
-
-        candidate
-
-    )
-
-
-    # ------------------------------------------
-    # Fold Clean
-    # ------------------------------------------
-
-    clean = filter_fold(
-        candidate
-    )
-
-    cv2.imwrite(
-
-        os.path.join(
-
-            FOLD_CLEAN_DIR,
-
-            f"part{i+1:03d}.png"
-
-        ),
-
-        clean
+        FOLD_CLEAN_DIR
 
     )
 
